@@ -1,0 +1,36 @@
+:root {
+  --bg: #07080b;
+  --orange: #ff6a00;
+  --ember: #e85d00;
+  --white: #f2f0ea;
+  --gold: #ffd36e;
+  --ink: #1a0e08;
+}
+
+body {
+  --font-display: var(--font-bricolage), system-ui, sans-serif;
+  --font-pixel: var(--font-silkscreen), ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font-pixel);
+  -webkit-font-smoothing: antialiased;
+}
+
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+a {
+  color: inherit;
+}

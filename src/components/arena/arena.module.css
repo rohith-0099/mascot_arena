@@ -1,0 +1,553 @@
+/* ---------- fixed 1920×1080 frame scaled to fit ---------- */
+.viewport {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  overflow: hidden;
+  cursor: none;
+}
+
+.frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 1920px;
+  height: 1080px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.16) 2px 4px);
+  mix-blend-mode: multiply;
+}
+
+/* ---------- HUD ---------- */
+.brand {
+  position: absolute;
+  left: 72px;
+  top: 52px;
+}
+
+.brandTitle {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 68px;
+  line-height: 0.95;
+  letter-spacing: -1px;
+  color: var(--white);
+  text-shadow:
+    0 6px 0 var(--ink),
+    4px 6px 0 var(--ink);
+}
+
+.brandTitle em {
+  font-style: normal;
+  color: var(--orange);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 8px 16px;
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: var(--white);
+  background: rgba(7, 8, 11, 0.75);
+  box-shadow:
+    inset 0 0 0 4px var(--orange),
+    6px 6px 0 var(--ink);
+}
+
+.liveDot {
+  width: 14px;
+  height: 14px;
+  background: #ff2e2e;
+  animation: blink 1s steps(2) infinite;
+}
+
+.clock {
+  position: absolute;
+  right: 72px;
+  top: 52px;
+  text-align: right;
+}
+
+.clockLabel {
+  font-size: 20px;
+  letter-spacing: 3px;
+  color: var(--gold);
+}
+
+.clockValue {
+  font-size: 64px;
+  line-height: 1;
+  color: var(--white);
+  text-shadow: 6px 6px 0 var(--ink);
+}
+
+.corner {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-color: var(--orange);
+  border-style: solid;
+  border-width: 0;
+}
+
+.tl {
+  left: 24px;
+  top: 24px;
+  border-left-width: 8px;
+  border-top-width: 8px;
+}
+.tr {
+  right: 24px;
+  top: 24px;
+  border-right-width: 8px;
+  border-top-width: 8px;
+}
+.bl {
+  left: 24px;
+  bottom: 24px;
+  border-left-width: 8px;
+  border-bottom-width: 8px;
+}
+.br {
+  right: 24px;
+  bottom: 24px;
+  border-right-width: 8px;
+  border-bottom-width: 8px;
+}
+
+.qr {
+  position: absolute;
+  left: 72px;
+  bottom: 112px;
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+}
+
+.qrBox {
+  width: 176px;
+  height: 176px;
+  padding: 10px;
+  background: var(--white);
+  box-shadow:
+    0 0 0 6px var(--orange),
+    10px 10px 0 6px var(--ink);
+}
+
+.qrBox canvas {
+  width: 156px !important;
+  height: 156px !important;
+  image-rendering: pixelated;
+}
+
+.qrText {
+  font-size: 30px;
+  line-height: 1.1;
+  color: var(--white);
+  text-shadow: 4px 4px 0 var(--ink);
+}
+
+.qrText span {
+  display: block;
+  font-size: 18px;
+  color: var(--gold);
+  margin-top: 8px;
+  letter-spacing: 2px;
+}
+
+.qrArrow {
+  color: var(--orange);
+  animation: nudge 0.8s steps(2) infinite;
+}
+
+.ticker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 64px;
+  background: var(--orange);
+  box-shadow: 0 -6px 0 var(--ink);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.tickerTrack {
+  display: flex;
+  white-space: nowrap;
+  animation: marquee 40s linear infinite;
+  font-size: 26px;
+  color: var(--ink);
+  letter-spacing: 2px;
+}
+
+.tickerTrack span {
+  padding-right: 64px;
+}
+
+/* ---------- speech bubble ---------- */
+.bubbleAnchor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+.bubble {
+  position: relative;
+  width: max-content;
+  max-width: 640px;
+  padding: 22px 30px;
+  font-size: 34px;
+  line-height: 1.25;
+  color: var(--ink);
+  background: var(--white);
+  text-transform: uppercase;
+  /* stepped pixel border */
+  box-shadow:
+    0 -6px 0 0 var(--ink),
+    0 6px 0 0 var(--ink),
+    -6px 0 0 0 var(--ink),
+    6px 0 0 0 var(--ink),
+    12px 12px 0 0 var(--orange);
+  animation: pop 0.24s steps(3) both;
+}
+
+.bubbleTail {
+  position: absolute;
+  left: 50%;
+  bottom: -30px;
+  width: 30px;
+  height: 30px;
+  margin-left: -15px;
+  background: var(--ink);
+  clip-path: polygon(0 0, 100% 0, 100% 20%, 80% 20%, 80% 40%, 60% 40%, 60% 60%, 40% 60%, 40% 40%, 20% 40%, 20% 20%, 0 20%);
+}
+
+.bubbleTail::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 0;
+  width: 18px;
+  height: 12px;
+  background: var(--white);
+  clip-path: polygon(0 0, 100% 0, 100% 50%, 66% 50%, 66% 100%, 33% 100%, 33% 50%, 0 50%);
+}
+
+.caret {
+  display: inline-block;
+  width: 16px;
+  height: 28px;
+  margin-left: 6px;
+  background: var(--orange);
+  vertical-align: -3px;
+  animation: blink 0.5s steps(2) infinite;
+}
+
+/* ---------- celebration banner ---------- */
+.banner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 170px;
+  height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.bannerBand {
+  position: absolute;
+  left: -40px;
+  right: -40px;
+  top: 30px;
+  height: 200px;
+  background: repeating-linear-gradient(-55deg, var(--orange) 0 36px, var(--ember) 36px 72px);
+  box-shadow:
+    0 -10px 0 var(--ink),
+    0 10px 0 var(--ink),
+    0 22px 0 var(--gold),
+    0 -22px 0 var(--gold);
+  transform-origin: center;
+  animation:
+    bandIn 0.42s steps(7) both,
+    bandSlide 1s linear infinite;
+}
+
+.bannerTitle {
+  position: relative;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 150px;
+  line-height: 1;
+  letter-spacing: -2px;
+  color: var(--white);
+  text-shadow:
+    -6px 0 0 var(--ink),
+    6px 0 0 var(--ink),
+    0 -6px 0 var(--ink),
+    0 6px 0 var(--ink),
+    0 14px 0 var(--ink),
+    10px 18px 0 #8a2a00;
+  animation: slam 0.36s steps(6) 0.12s both;
+}
+
+.bannerSub {
+  position: relative;
+  margin-top: 26px;
+  padding: 6px 22px;
+  font-size: 44px;
+  color: var(--ink);
+  background: var(--gold);
+  box-shadow:
+    0 0 0 6px var(--ink),
+    8px 8px 0 6px var(--ink);
+  animation:
+    pop 0.3s steps(3) 0.45s both,
+    blinkSoft 0.3s steps(2) 0.8s 4;
+}
+
+.bannerOut {
+  animation: dissolve 0.4s steps(5) both;
+}
+
+/* ---------- dev controls ---------- */
+.dev {
+  position: absolute;
+  right: 72px;
+  bottom: 96px;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 10px;
+  cursor: default;
+}
+
+.dev button {
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  padding: 10px 14px;
+  color: var(--white);
+  background: #15121a;
+  border: 0;
+  box-shadow:
+    inset 0 0 0 4px var(--orange),
+    4px 4px 0 var(--ink);
+  cursor: pointer;
+}
+
+.dev button:active {
+  transform: translate(4px, 4px);
+  box-shadow: inset 0 0 0 4px var(--gold);
+}
+
+.devHint {
+  grid-column: 1 / -1;
+  font-size: 14px;
+  color: var(--gold);
+  text-align: right;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes blinkSoft {
+  50% {
+    filter: brightness(1.4);
+  }
+}
+@keyframes nudge {
+  50% {
+    transform: translateX(-8px);
+  }
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes bandIn {
+  from {
+    transform: scaleX(0) skewX(-12deg);
+  }
+  to {
+    transform: scaleX(1) skewX(-12deg);
+  }
+}
+@keyframes bandSlide {
+  to {
+    background-position: 88px 0;
+  }
+}
+@keyframes slam {
+  0% {
+    transform: scale(3.2) rotate(-6deg);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(0.92) rotate(1deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+@keyframes dissolve {
+  to {
+    clip-path: inset(50% 0 50% 0);
+    opacity: 0;
+  }
+}
+
+/* ---------- approved photo card ---------- */
+.photoCard {
+  position: absolute;
+  left: 1300px;
+  top: 520px;
+  padding: 20px 20px 0;
+  background: var(--white);
+  box-shadow:
+    0 0 0 8px var(--ink),
+    16px 16px 0 8px var(--orange),
+    16px 16px 0 14px var(--ink);
+  transform: translate(-50%, -50%) rotate(-2.5deg);
+  animation: cardDrop 0.42s steps(7) both;
+}
+
+.photoCardOut {
+  animation: cardOut 0.6s steps(6) both;
+}
+
+.photoCanvas {
+  display: block;
+  background: #000;
+  box-shadow: 0 0 0 4px var(--ink);
+}
+
+.photoTag {
+  position: absolute;
+  left: 50%;
+  top: -34px;
+  padding: 8px 18px;
+  font-size: 26px;
+  color: var(--ink);
+  background: var(--gold);
+  white-space: nowrap;
+  box-shadow:
+    0 0 0 6px var(--ink),
+    6px 6px 0 6px var(--ink);
+  transform: translateX(-50%) rotate(2deg);
+  animation: blinkSoft 0.3s steps(2) 0.5s 6;
+}
+
+.photoTeam {
+  padding: 14px 4px 18px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 54px;
+  line-height: 1;
+  color: var(--ink);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photoTeam span {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  font-size: 20px;
+  letter-spacing: 3px;
+  color: var(--ember);
+}
+
+.feed {
+  position: absolute;
+  right: 72px;
+  top: 150px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: var(--white);
+  text-shadow: 3px 3px 0 var(--ink);
+}
+
+.feedDot {
+  width: 12px;
+  height: 12px;
+  background: #7fe07a;
+  box-shadow: 0 0 0 3px var(--ink);
+}
+
+.feedDotWarn {
+  background: var(--gold);
+  animation: blink 0.8s steps(2) infinite;
+}
+
+@keyframes cardDrop {
+  0% {
+    transform: translate(-50%, -260%) rotate(-14deg);
+  }
+  80% {
+    transform: translate(-50%, -46%) rotate(-1deg) scale(1.04, 0.94);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(-2.5deg);
+  }
+}
+
+@keyframes cardOut {
+  0%,
+  60% {
+    transform: translate(-50%, -50%) rotate(-2.5deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, 160%) rotate(10deg);
+    opacity: 0;
+  }
+}
