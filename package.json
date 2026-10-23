@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-mediapipe.mjs",
     "dev": "next dev --turbopack",
+    "prebuild": "node scripts/copy-mediapipe.mjs",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
@@ -14,6 +16,7 @@
     "test:resilience": "node --env-file=.env.local tests/e2e/resilience.mjs"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "0.10.35",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "next": "15.5.28",

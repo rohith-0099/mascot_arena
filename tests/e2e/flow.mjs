@@ -52,14 +52,16 @@ try {
   for (const n of [1, 2]) {
     const ctx = await browser.newContext({ ...devices["iPhone 13"] });
     const p = await ctx.newPage();
-    watch(p, `phone${n}`, problems, [/429/]);
+    // MediaPipe logs its CPU delegate start-up through console.error
+    watch(p, `phone${n}`, problems, [/429/, /XNNPACK delegate/]);
     await p.goto(`${BASE}/join`, { waitUntil: "networkidle" });
     phones.push(p);
   }
   const sendPhoto = async (phone, team, label) => {
     await phone.fill("#team", team);
     await phone.locator("input[type=file]").nth(1).setInputFiles(await tmp(await makePhoto(label)));
-    await phone.waitForSelector('img[alt="Your photo"]');
+    await phone.getByRole("button", { name: /CROP/ }).click();
+    await phone.waitForSelector('img[alt="Your photo"]', { timeout: 30000 });
     await phone.getByRole("button", { name: /SEND TO ARENA/ }).click();
   };
   await sendPhoto(phones[0], "E2E Approvers", "APPROVE");

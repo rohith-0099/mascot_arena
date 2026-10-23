@@ -185,13 +185,7 @@ export class Stage {
           floor: fy + rand(-6, 14),
         });
     for (const p of this.scene.flarePoints) this.particles.burst(p.x, p.y, 24, SPARK, 120, false);
-    const fireworks = async () => {
-      for (let i = 0; i < 5; i++) {
-        this.particles.firework(rand(110, 370), 200, rand(30, 90), pick([SPARK, ["#ffffff", "#ffc08f", "#ff8a3d"], ["#f2f0ea", "#ffd36e", "#e85d00"]]));
-        await wait(rand(180, 380));
-      }
-    };
-    void fireworks();
+    void this.fireworks(5);
     await h.play("celebrate");
     this.particles.confetti(h.x, fy - 15 * h.scale, 50, fy, CONFETTI);
     await wait(400);
@@ -263,6 +257,14 @@ export class Stage {
       this.busyMoment = false;
     }
     return true;
+  }
+
+  /** a volley of fireworks over the arena */
+  async fireworks(count: number, x0 = 110, x1 = 370) {
+    for (let i = 0; i < count; i++) {
+      this.particles.firework(rand(x0, x1), 200, rand(30, 90), pick([SPARK, ["#ffffff", "#ffc08f", "#ff8a3d"], ["#f2f0ea", "#ffd36e", "#e85d00"]]));
+      await wait(rand(180, 380));
+    }
   }
 
   /** impact for a DOM element "landing" on the stage at world coords */

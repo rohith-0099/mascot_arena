@@ -28,7 +28,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   return new NextResponse(file.stream(), {
     headers: {
-      "content-type": "image/jpeg",
+      "content-type": sub.photo_path.endsWith(".webp") ? "image/webp" : "image/jpeg",
       // short and private: a pulled photo stops being served within a minute
       "cache-control": "private, max-age=60",
       "x-content-type-options": "nosniff",

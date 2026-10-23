@@ -172,3 +172,174 @@
   color: #8a7f7a;
   text-align: center;
 }
+
+/* ---------- crop + style editor ---------- */
+.photoBoxTall {
+  aspect-ratio: 4 / 5;
+}
+
+.crop {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cropFrame {
+  position: relative;
+  box-shadow: inset 0 0 0 3px var(--gold);
+}
+
+.cropCanvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  touch-action: none;
+  cursor: grab;
+}
+
+/* rule-of-thirds guides + gold corner brackets */
+.cropGrid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent calc(33.33% - 1px), rgba(255, 211, 110, 0.35) 0 calc(33.33% + 1px), transparent 0 calc(66.66% - 1px), rgba(255, 211, 110, 0.35) 0 calc(66.66% + 1px), transparent 0),
+    linear-gradient(transparent calc(33.33% - 1px), rgba(255, 211, 110, 0.35) 0 calc(33.33% + 1px), transparent 0 calc(66.66% - 1px), rgba(255, 211, 110, 0.35) 0 calc(66.66% + 1px), transparent 0);
+  box-shadow: inset 0 0 0 3px var(--gold);
+}
+
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: var(--gold);
+}
+
+.zoom input {
+  flex: 1;
+  accent-color: var(--orange);
+  min-height: 32px;
+}
+
+.style {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  font-size: 15px;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toggleBox {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  background: #07080b;
+  box-shadow: inset 0 0 0 3px #3e3237;
+  flex: none;
+}
+
+.toggleBox::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 18px;
+  height: 18px;
+  background: #8a7f7a;
+  transition: transform 0.15s steps(3);
+}
+
+.toggle input:checked + .toggleBox {
+  box-shadow: inset 0 0 0 3px var(--orange);
+}
+
+.toggle input:checked + .toggleBox::after {
+  background: var(--gold);
+  transform: translateX(24px);
+}
+
+.toggle input:focus-visible + .toggleBox {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.note {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--gold);
+}
+
+.looks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.look {
+  min-height: 52px;
+  padding: 0 4px;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--white);
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: inset 0 0 0 3px #3e3237;
+}
+
+.look_sticker {
+  background: linear-gradient(#2a2430, #1a161c);
+}
+.look_hero {
+  background: linear-gradient(#5a2a08, #2a1204);
+  color: var(--gold);
+}
+.look_neon {
+  background: linear-gradient(#3a0a4a, #0a1a3a);
+  color: #7ff9ff;
+}
+.look_pixel {
+  background: repeating-conic-gradient(#1f3a1a 0 25%, #14261a 0 50%) 0 0 / 12px 12px;
+  color: #b4ff8a;
+}
+
+.lookOn {
+  box-shadow:
+    inset 0 0 0 3px var(--gold),
+    0 0 0 2px var(--ink);
+  transform: translateY(-2px);
+}
+
+.look:disabled {
+  opacity: 0.45;
+}
+
+.link {
+  align-self: center;
+  min-height: 44px;
+  padding: 0 12px;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}

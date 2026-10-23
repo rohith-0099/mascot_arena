@@ -42,3 +42,6 @@ next-env.d.ts
 
 !.env.example
 /.next-*/
+
+# copied from node_modules by scripts/copy-mediapipe.mjs
+/public/mediapipe/

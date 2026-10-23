@@ -17,18 +17,32 @@ export function sniffImage(buf: Buffer): "jpeg" | "png" | "webp" | null {
 }
 
 /**
- * Decode + re-encode: applies EXIF rotation, strips all metadata (GPS etc.),
- * caps the long edge and normalises to JPEG. Anything that isn't a real image
+ * Decode + re-encode: applies EXIF rotation, strips all metadata (GPS etc.)
+ * and caps the long edge. Background-removed cutouts keep their transparency
+ * as WebP; everything else becomes JPEG. Anything that isn't a real image
  * fails to decode here.
  */
 export async function normaliseImage(input: Buffer) {
-  const { data, info } = await sharp(input, { limitInputPixels: 50_000_000, failOn: "error" })
-    .rotate()
-    .resize(MAX_EDGE, MAX_EDGE, { fit: "inside", withoutEnlargement: true })
-    .jpeg({ quality: 80, mozjpeg: true })
-    .toBuffer({ resolveWithObject: true });
-  return { data, width: info.width, height: info.height, sha256: createHash("sha256").update(data).digest("hex") };
+  const open = () => sharp(input, { limitInputPixels: 50_000_000, failOn: "error" });
+  const { hasAlpha } = await open().metadata();
+  // an alpha channel that's fully opaque isn't a cutout: store it as a plain photo
+  const transparent = !!hasAlpha && !(await open().stats()).isOpaque;
+  const pipeline = open()
+    .rotate().resize(MAX_EDGE, MAX_EDGE, { fit: "inside", withoutEnlargement: true });
+  const { data, info } = await (transparent
+    ? pipeline.webp({ quality: 85, alphaQuality: 90 })
+    : pipeline.flatten({ background: "#000000" }).jpeg({ quality: 80, mozjpeg: true })
+  ).toBuffer({ resolveWithObject: true });
+  return {
+    data,
+    width: info.width,
+    height: info.height,
+    format: transparent ? ("webp" as const) : ("jpeg" as const),
+    sha256: createHash("sha256").update(data).digest("hex"),
+  };
 }
+
+export const PHOTO_TYPES = { jpeg: { ext: "jpg", mime: "image/jpeg" }, webp: { ext: "webp", mime: "image/webp" } } as const;
 
 const DEV_SALT = "realm-hack-dev-salt";
 

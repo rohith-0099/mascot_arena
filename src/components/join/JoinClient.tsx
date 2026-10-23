@@ -1,19 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AnimName } from "@/arena/animations";
 import { MascotBadge } from "@/components/shared/MascotBadge";
+import { preloadCutout } from "@/lib/cutout";
+import { CropStep } from "./CropStep";
+import { StyleStep } from "./StyleStep";
 import s from "./join.module.css";
 
 const MAX_PICK_BYTES = 25 * 1024 * 1024;
-/** must stay under the server limit (4 MB) and Vercel's 4.5 MB body cap */
-const MAX_SEND_BYTES = 4 * 1024 * 1024;
-const MAX_EDGE = 1280;
+/** enough detail to zoom into while cropping */
+const MAX_EDGE = 2000;
 const TEAM_KEY = "rh_team";
 
 type Phase =
   | { k: "idle" }
   | { k: "preparing" }
+  | { k: "crop" }
   | { k: "ready" }
   | { k: "uploading"; pct: number }
   | { k: "sent"; team: string }
@@ -29,8 +32,8 @@ function uuid() {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
 
-/** Downscale to ≤1280px and re-encode as JPEG ~0.8 (also drops EXIF/GPS on the phone). */
-async function compress(file: File): Promise<Blob> {
+/** Decode (applying EXIF rotation) and downscale to ≤2000px for cropping. */
+async function decode(file: File): Promise<HTMLCanvasElement> {
   let source: CanvasImageSource & { width: number; height: number };
   try {
     source = await createImageBitmap(file, { imageOrientation: "from-image" });
@@ -52,7 +55,8 @@ async function compress(file: File): Promise<Blob> {
   c.width = Math.round(source.width * k);
   c.height = Math.round(source.height * k);
   c.getContext("2d")!.drawImage(source, 0, 0, c.width, c.height);
-  return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error("encode"))), "image/jpeg", 0.8));
+  if ("close" in source) source.close();
+  return c;
 }
 
 function upload(form: FormData, onProgress: (pct: number) => void) {
@@ -78,6 +82,8 @@ export function JoinClient() {
   const [team, setTeam] = useState("");
   const [phase, setPhase] = useState<Phase>({ k: "idle" });
   const [preview, setPreview] = useState<string | null>(null);
+  const [source, setSource] = useState<HTMLCanvasElement | null>(null);
+  const [cropped, setCropped] = useState<HTMLCanvasElement | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const photo = useRef<{ blob: Blob; token: string } | null>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
@@ -105,17 +111,26 @@ export function JoinClient() {
     if (!file.type.startsWith("image/")) return setPhase({ k: "error", message: "That isn't a photo. Pick an image file." });
     if (file.size > MAX_PICK_BYTES) return setPhase({ k: "error", message: "That photo is huge. Try a smaller one." });
     setPhase({ k: "preparing" });
+    preloadCutout();
     try {
-      const blob = await compress(file);
-      if (blob.size > MAX_SEND_BYTES) return setPhase({ k: "error", message: "That photo is too large. Try another one." });
-      // a fresh token per chosen photo: retries of the same photo stay idempotent
-      photo.current = { blob, token: uuid() };
-      setPreview(URL.createObjectURL(blob));
-      setPhase({ k: "ready" });
+      const c = await decode(file);
+      photo.current = null;
+      setPreview(null);
+      setCropped(null);
+      setSource(c);
+      setPhase({ k: "crop" });
     } catch {
       setPhase({ k: "error", message: "Couldn't read that photo. Try another one (JPEG or PNG)." });
     }
   };
+
+  const onStyled = useCallback((blob: Blob | null, error?: string) => {
+    // a fresh token per finished photo: retries of the same photo stay idempotent
+    photo.current = blob ? { blob, token: uuid() } : null;
+    setPreview(blob ? URL.createObjectURL(blob) : null);
+    if (error) setPhase({ k: "error", message: error });
+    else setPhase((p) => (p.k === "error" && !p.retryAt ? { k: "ready" } : p));
+  }, []);
 
   const send = async () => {
     const name = team.replace(/\s+/g, " ").trim();
@@ -127,13 +142,16 @@ export function JoinClient() {
     const form = new FormData();
     form.set("team", name);
     form.set("token", photo.current.token);
-    form.set("photo", photo.current.blob, "photo.jpg");
+    const blob = photo.current.blob;
+    form.set("photo", blob, blob.type === "image/jpeg" ? "photo.jpg" : blob.type === "image/png" ? "photo.png" : "photo.webp");
     setPhase({ k: "uploading", pct: 0 });
     try {
       const { status, body } = await upload(form, (pct) => setPhase({ k: "uploading", pct }));
       if (status === 200 && body.ok) {
         photo.current = null;
         setPreview(null);
+        setSource(null);
+        setCropped(null);
         setPhase({ k: "sent", team: String(body.team ?? name) });
         return;
       }
@@ -153,11 +171,13 @@ export function JoinClient() {
   const reset = () => {
     photo.current = null;
     setPreview(null);
+    setSource(null);
+    setCropped(null);
     setPhase({ k: "idle" });
   };
 
   const busy = phase.k === "preparing" || phase.k === "uploading";
-  const canSend = !!photo.current && !busy && cooldown === 0 && phase.k !== "sent";
+  const canSend = !!photo.current && !!cropped && phase.k !== "crop" && !busy && cooldown === 0 && phase.k !== "sent";
   const anim: AnimName =
     phase.k === "sent" ? "celebrate" : phase.k === "error" ? "hurt" : phase.k === "uploading" ? "talk" : phase.k === "ready" ? "wave" : "idle";
 
@@ -199,14 +219,35 @@ export function JoinClient() {
             disabled={busy}
           />
 
-          <div className={s.photoBox}>
-            {preview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={preview} alt="Your photo" className={s.preview} />
-            ) : (
-              <p className={s.placeholder}>{phase.k === "preparing" ? "PREPARING…" : "NO PHOTO YET"}</p>
-            )}
-          </div>
+          {phase.k === "crop" && source ? (
+            <CropStep
+              source={source}
+              onDone={(c) => {
+                setCropped(c);
+                setPhase({ k: "ready" });
+              }}
+            />
+          ) : (
+            <div className={`${s.photoBox} ${cropped ? s.photoBoxTall : ""}`}>
+              {preview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={preview} alt="Your photo" className={s.preview} />
+              ) : (
+                <p className={s.placeholder}>
+                  {phase.k === "preparing" ? "PREPARING…" : cropped ? "✨ STYLING…" : "NO PHOTO YET"}
+                </p>
+              )}
+            </div>
+          )}
+
+          {cropped && phase.k !== "crop" && (
+            <>
+              <StyleStep photo={cropped} disabled={busy} onResult={onStyled} />
+              <button className={s.link} onClick={() => setPhase({ k: "crop" })} disabled={busy}>
+                ✂ RE-CROP
+              </button>
+            </>
+          )}
 
           <div className={s.row}>
             <button className={s.secondary} onClick={() => cameraInput.current?.click()} disabled={busy}>

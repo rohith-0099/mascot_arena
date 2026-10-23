@@ -28,19 +28,29 @@ const PHOTO_LINES = [
   "PEAK HACKATHON ENERGY.",
 ];
 
+const CHALLENGER_LINES = [
+  "A NEW CHALLENGER APPROACHES!",
+  "MAIN CHARACTER ENERGY!",
+  "THEY GOT THE HERO EDIT!",
+  "STICKER-WORTHY. ICONIC.",
+  "THAT'S A BOSS-FIGHT POSE.",
+];
+
 const BUBBLE_W_GUESS = 560;
 const PHOTO_HOLD_MS = 7000;
 const MAX_QUEUE = 40;
 /** card centre in world px (matches .photoCard left/top in arena.module.css) */
 const CARD_WORLD = { x: 1300 / PIXEL, y: 520 / PIXEL };
 
-type Card = { id: string; team: string; image: ImageBitmap | HTMLImageElement; leaving: boolean };
+type Card = { id: string; team: string; image: ImageBitmap | HTMLImageElement; cutout: boolean; leaving: boolean };
 
-async function loadPhoto(id: string): Promise<ImageBitmap | null> {
+/** the server stores background-removed photos (and only those) as WebP */
+async function loadPhoto(id: string): Promise<{ image: ImageBitmap; cutout: boolean } | null> {
   try {
     const res = await fetch(`/api/screen/photo/${id}`, { cache: "no-store" });
     if (!res.ok) return null;
-    return await createImageBitmap(await res.blob());
+    const cutout = res.headers.get("content-type") === "image/webp";
+    return { image: await createImageBitmap(await res.blob()), cutout };
   } catch {
     return null;
   }
@@ -155,24 +165,29 @@ export function ArenaScreen() {
         if (!st || st.isBusy || showing.current || queue.current.length === 0) continue;
         const item = queue.current.shift()!;
         showing.current = { id: item.submission_id, pulled: false };
-        const image = await loadPhoto(item.submission_id);
-        if (!image || showing.current.pulled) {
+        const loaded = await loadPhoto(item.submission_id);
+        if (!loaded || showing.current.pulled) {
           showing.current = null;
           continue; // pulled or unavailable: skip silently
         }
+        const { image, cutout } = loaded;
         const cur = showing.current;
         await st.moment("photo", async () => {
           const h = st.hero;
           await h.walkTo(150);
           h.facing = 1;
-          st.say(`TEAM ${item.team_name.toUpperCase()} SENT A PHOTO!`, 2600);
-          void h.play("wave");
-          setCard({ id: item.submission_id, team: item.team_name, image, leaving: false });
+          st.say(
+            cutout ? `TEAM ${item.team_name.toUpperCase()} HAS ENTERED THE ARENA!` : `TEAM ${item.team_name.toUpperCase()} SENT A PHOTO!`,
+            2600,
+          );
+          void h.play(cutout ? "celebrate" : "wave");
+          setCard({ id: item.submission_id, team: item.team_name, image, cutout, leaving: false });
           await sleep(420); // card lands
           st.landing(CARD_WORLD.x, CARD_WORLD.y);
+          if (cutout) void st.fireworks(4, 260, 420);
           for (let t = 0; t < PHOTO_HOLD_MS && !cur.pulled; t += 250) {
             if (t === 3000) {
-              st.say(pick(PHOTO_LINES), 2600);
+              st.say(pick(cutout ? CHALLENGER_LINES : PHOTO_LINES), 2600);
               void h.play("talk");
             }
             await sleep(250);
@@ -241,7 +256,7 @@ export function ArenaScreen() {
       <canvas ref={canvasRef} className={s.canvas} />
 
       {banner && <Banner key={banner.id} title={banner.title} sub={banner.sub} leaving={banner.leaving} />}
-      {card && <PhotoCard key={card.id} image={card.image} team={card.team} leaving={card.leaving} />}
+      {card && <PhotoCard key={card.id} image={card.image} team={card.team} cutout={card.cutout} leaving={card.leaving} />}
       {bubble && <SpeechBubble ref={bubbleRef} text={bubble} />}
 
       <div className={`${s.corner} ${s.tl}`} />

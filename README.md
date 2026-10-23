@@ -10,7 +10,7 @@ npm run dev
 | Route | What |
 |---|---|
 | `/screen` | 1920×1080 projector view (scaled to fit). Add `?dev` for operator buttons. |
-| `/join` | Phone page: team name + camera/upload → moderation queue. |
+| `/join` | Phone page: team name + camera/upload → crop, background removal and a look (sticker / hero / neon / 8-bit) → moderation queue. |
 | `/admin` | Moderation queue (Supabase Auth, admins only): approve, reject, pull from screen. |
 | `/lab` | Every character × every animation on a transparency checkerboard; PNG + JSON sheet export. |
 
@@ -19,6 +19,8 @@ Without Supabase env vars the arena runs in **offline mode**: the mascot and all
 **Operator keys on `/screen`:** `C`/`Space` celebrate · `A` attack · `W` wave · `←`/`→` walk · `T` block-wipe transition · `H` toggle controls.
 
 ## Photo pipeline
+
+**On the phone:** crop (drag, pinch, slider) → optional background removal with MediaPipe's selfie segmenter, running fully on the device (no cloud call; the WASM runtime is copied into `public/mediapipe` by `scripts/copy-mediapipe.mjs` before `dev`/`build`, the model is `public/models/selfie_segmenter.tflite`) → a look baked into the pixels, so moderators approve exactly what the screen shows. Cutouts are sent with transparency, stored as WebP and shown on `/screen` as a "new challenger" with light rays and fireworks; full photos stay JPEG and use the arcade card.
 
 ```
 phone /join ──POST /api/submit──▶ validate + resize + strip EXIF (sharp)
@@ -93,4 +95,4 @@ The E2E scripts refuse to run unless both the app and Supabase are on `localhost
 | KodoRe/pixel-forge | Skipped. No LICENSE file (MIT is only claimed in a source header), the npm package of the same name can't be verified as the same project, and its generic generators can't produce this specific mascot. |
 | MozeeB/pixel-asset-gen | Not used. It is MIT and clean, but it's an offline Python generator in a Kingdom-Rush style that clashes with the brand. Our particle/effect approach is similar in spirit and written directly in Canvas. |
 
-Dependencies: `next`, `react`, `qrcode`, `@supabase/supabase-js`, `@supabase/ssr`, `server-only` (MIT), `sharp` (Apache-2.0); dev: `supabase` CLI (MIT). Fonts: Bricolage Grotesque and Silkscreen (OFL, via `next/font`).
+Dependencies: `next`, `react`, `qrcode`, `@mediapipe/tasks-vision` 0.10.35 (Apache-2.0; pinned below 1.x, which adds usage telemetry to Google), `@supabase/supabase-js`, `@supabase/ssr`, `server-only` (MIT), `sharp` (Apache-2.0); dev: `supabase` CLI (MIT). Fonts: Bricolage Grotesque and Silkscreen (OFL, via `next/font`).

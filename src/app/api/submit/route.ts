@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { clientIp, isHttps } from "@/lib/http";
-import { MAX_UPLOAD_BYTES, hashWithSalt, normaliseImage, sniffImage, submitterSalt } from "@/lib/image";
+import { MAX_UPLOAD_BYTES, PHOTO_TYPES, hashWithSalt, normaliseImage, sniffImage, submitterSalt } from "@/lib/image";
 import { PHOTO_BUCKET } from "@/lib/supabase/env";
 import { serviceClient } from "@/lib/supabase/service";
 
@@ -114,8 +114,9 @@ export async function POST(req: NextRequest) {
     return fail(500, { code: "server_error", message: "Could not save your team. Try again." }, cookieRes);
   }
 
-  const path = `${new Date().toISOString().slice(0, 10)}/${randomUUID()}.jpg`;
-  const up = await db.storage.from(PHOTO_BUCKET).upload(path, img.data, { contentType: "image/jpeg", upsert: false });
+  const type = PHOTO_TYPES[img.format];
+  const path = `${new Date().toISOString().slice(0, 10)}/${randomUUID()}.${type.ext}`;
+  const up = await db.storage.from(PHOTO_BUCKET).upload(path, img.data, { contentType: type.mime, upsert: false });
   if (up.error) {
     console.error("storage upload failed", up.error);
     return fail(500, { code: "server_error", message: "Upload failed. Try again." }, cookieRes);
