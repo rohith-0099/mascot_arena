@@ -6,6 +6,11 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.*.*"],
   // lets a production build run alongside `next dev` (e.g. NEXT_DIST_DIR=.next-prod)
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // turbopack's file tracing misses sharp's native binary and libvips, so the
+  // upload route crashes on Vercel ("Could not load the sharp module")
+  outputFileTracingIncludes: {
+    "/api/submit": ["./node_modules/@img/sharp-linux-x64/**/*", "./node_modules/@img/sharp-libvips-linux-x64/**/*"],
+  },
   async headers() {
     return [
       {
